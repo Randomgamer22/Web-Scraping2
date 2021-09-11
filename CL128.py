@@ -1,45 +1,43 @@
+from bs4 import BeautifulSoup as bs
 import requests
-import csv
+import pandas as pd
 
-from bs4 import BeautifulSoup
 
-URL = "https://en.wikipedia.org/wiki/List_of_brown_dwarfs"
+url = 'https://en.wikipedia.org/wiki/List_of_brown_dwarfs'
 
-def scrape():
-	headers = ["Name", "Radius", "Mass", "Distance"]
-	r = requests.get(URL)
-	
-	soup = BeautifulSoup(r.text, "html.parser")
-	table = soup.find_all("tbody")[7]
+page = requests.get(url)
+print(page)
 
-	star_data = []
+soup = bs(page.text,'html.parser')
 
-	for tr_tag in table.find_all("tr"):
-		td_tags = tr_tag.find_all("td")
-		temp_list = []
-		
-		for index, td_tag in enumerate(td_tags):
-			if index == 0:
-				if td_tag.find('a') != None:
-					a_tag = td_tag.find_all("a")[0]
-					temp_list.append(a_tag.text)
-				else:
-					temp_list.append(td_tag.text)
-			elif index == 5 or index == 7 or index == 8:
-				try:
-					temp_list.append(r'{}'.format(td_tag.contents[-1]))
+star_table = soup.find_all('table')
+print(len(star_table))
 
-				except:
-					temp_list.append("")
 
-		star_data.append(temp_list)
+temp_list= []
+table_rows = star_table[4].find_all('tr')
+for tr in table_rows:
+    td = tr.find_all('td')
+    row = [i.text.rstrip() for i in td]
+    temp_list.append(row)
+print(temp_list)
 
-	return star_data, headers
 
-star_data, headers = scrape()
 
-with open("main.csv", "a", encoding = "utf-8") as file:
-	csv_writer = csv.writer(file)
-	csv_writer.writerow(headers)
-	csv_writer.writerows(star_data)
+Star_names = []
+Distance =[]
+Mass = []
+Radius =[]
 
+
+for i in range(1,len(temp_list)):
+    
+    Star_names.append(temp_list[i][0])
+    Distance.append(temp_list[i][5])
+    Mass.append(temp_list[i][7])
+    Radius.append(temp_list[i][8])
+
+df2 = pd.DataFrame(list(zip(Star_names,Distance,Mass,Radius,)),columns=['Star_name','Distance','Mass','Radius'])
+print(df2)
+
+df2.to_csv('dwarf_stars.csv')
